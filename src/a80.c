@@ -4,6 +4,34 @@
 
 #include "arr.h"
 
+static unsigned char output[BUFSIZ];
+static unsigned short addr;
+static size_t lineno;
+static int pass;
+
+static void
+assemble(struct arr *lines, FILE *outfile)
+{
+    pass = 1;
+    for (lineno = 0; lineno < lines->size; ++lineno) {
+        parse();
+    }
+
+    pass = 2;
+    for (lineno = 0; lineno < lines->size; ++lineno) {
+        parse();
+    }
+
+    fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
+}
+
+static void
+errmsg(char *msg)
+{
+    fprintf(stderr, "a80 %ld: %s\n", lineno + 1, msg);
+    exit(EXIT_FAILURE);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -29,11 +57,14 @@ main(int argc, char *argv[])
     }
     free(line);
 
+    /* TODO Dynamically name the file using the stem of argv[1]. */
     ostream = fopen("x.com", "w+");
     if (ostream == NULL) {
         perror("fopen");
         exit(EXIT_FAILURE);
     }
+
+    assemble(lines, ostream);
 
     freearr(lines);
     fclose(istream);
