@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,17 +10,94 @@ static unsigned short addr;
 static size_t lineno;
 static int pass;
 
+/* FORMAT [label:] [op [arg1[, arg2]]] [; comment] */
+static char *label;
+static char *op;
+static char *arg1;
+static char *arg2;
+static char *comment;
+
+static char *
+strip(char *s)
+{
+    if (s == NULL || s[0] == '\0') return NULL;
+
+    char *t = strchr(s, '\0') - 1;
+    while (t > s && isspace(*t)) --t;
+    t[1] = '\0';
+
+    return s + strspn(s, " \f\n\r\t\v");
+}
+
+static void
+parse(char *line)
+{
+    label = NULL;
+    op = NULL;
+    arg1 = NULL;
+    arg2 = NULL;
+    comment = NULL;
+
+    line = strip(line);
+    if (line == NULL || line[0] == '\0') return;
+
+    char *prevdelim = line;
+    char *end = strchr(line, '\0');
+
+    char *comment = memchr(line, ';', end - line);
+    if (comment) {
+        end = comment;
+    }
+
+    char *labeldelim = memchr(line, ':', end - prevdelim);
+    if (labeldelim) {
+        *labeldelim = '\0';
+        label = prevdelim;
+
+        prevdelim = labeldelim + 1;
+        if (prevdelim >= end) return;
+    }
+
+    char *opdelim = memchr(prevdelim, ' ', end - prevdelim);
+    if (opdelim) {
+        *opdelim = '\0';
+        op = prevdelim;
+
+        prevdelim = opdelim + 1;
+        if (prevdelim >= end) return;
+    } else {
+        op = prevdelim;
+        return;
+    }
+
+    char *arg2delim = memchr(prevdelim, ',', end - prevdelim);
+    if (arg2delim) {
+        arg2 = strip(arg2delim + 1);
+    }
+
+    char *arg1delim = arg2delim ? arg2delim : end;
+    if (arg1delim) {
+        arg1 = strip(prevdelim);
+        *arg1delim = '\0';
+
+        prevdelim = arg1delim + 1;
+        if (prevdelim >= end) return;
+    }
+}
+
 static void
 assemble(struct arr *lines, FILE *outfile)
 {
+    /* Record address of label declarations. */
     pass = 1;
     for (lineno = 0; lineno < lines->size; ++lineno) {
-        parse();
+        parse(lines->items[lineno]);
     }
 
+    /* Generate object code. */
     pass = 2;
     for (lineno = 0; lineno < lines->size; ++lineno) {
-        parse();
+        parse(lines->items[lineno]);
     }
 
     fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
