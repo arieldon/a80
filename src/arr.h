@@ -4,9 +4,9 @@
 #include <stdlib.h>
 
 struct arr {
-    size_t size;
-    size_t capacity;
-    char **items;
+	size_t size;
+	size_t capacity;
+	char **items;
 };
 
 struct arr *initarr(size_t capacity);
