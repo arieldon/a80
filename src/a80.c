@@ -20,7 +20,8 @@ static char *comment;
 static char *
 strip(char *s)
 {
-	if (s == NULL || s[0] == '\0') return NULL;
+	if (s == NULL) return NULL;
+	if (s[0] == '\0') return "";
 
 	char *t = strchr(s, '\0') - 1;
 	while (t > s && isspace(*t)) --t;
@@ -41,52 +42,48 @@ parse(char *line)
 	line = strip(line);
 	if (line == NULL || line[0] == '\0') return;
 
-	char *prevdelim = line;
-	char *end = strchr(line, '\0');
+	char *end = line + strlen(line);
 
 	comment = memchr(line, ';', end - line);
 	if (comment) {
-		if (comment[0] == line[0]) {
+		if (line[0] == ';') {
 			return;
 		}
+
 		end = comment;
 		*end = '\0';
 		comment = strip(comment + 1);
 	}
 
-	char *labeldelim = memchr(line, ':', end - prevdelim);
-	if (labeldelim) {
-		*labeldelim = '\0';
-		label = prevdelim;
-
-		prevdelim = labeldelim + 1;
-		if (prevdelim >= end) return;
+	arg2 = memchr(line, ',', end - line);
+	if (arg2) {
+		end = arg2;
+		*end = '\0';
+		arg2 = strip(arg2 + 1);
 	}
 
-	char *opdelim = memchr(prevdelim, ' ', end - prevdelim);
-	if (opdelim) {
-		*opdelim = '\0';
-		op = prevdelim;
-
-		prevdelim = opdelim + 1;
-		if (prevdelim >= end) return;
+	arg1 = strrchr(strip(line), ' ');
+	if (arg1) {
+		end = arg1;
+		*end = '\0';
+		arg1 = strip(arg1 + 1);
 	} else {
-		op = prevdelim;
-		return;
+		if ((arg1 = strrchr(strip(line), '\t')) != NULL) {
+			end = arg1;
+			*end = '\0';
+			arg1 = strip(arg1 + 1);
+		}
 	}
 
-	char *arg2delim = memchr(prevdelim, ',', end - prevdelim);
-	if (arg2delim) {
-		arg2 = strip(arg2delim + 1);
-	}
+	op = memchr(line, ':', end - line);
+	if (op) {
+		end = op;
+		*end = '\0';
+		op = strip(op + 1);
 
-	char *arg1delim = arg2delim ? arg2delim : end;
-	if (arg1delim) {
-		arg1 = strip(prevdelim);
-		*arg1delim = '\0';
-
-		prevdelim = arg1delim + 1;
-		if (prevdelim >= end) return;
+		label = line;
+	} else {
+		op = strip(line);
 	}
 }
 
