@@ -44,9 +44,14 @@ parse(char *line)
 	char *prevdelim = line;
 	char *end = strchr(line, '\0');
 
-	char *comment = memchr(line, ';', end - line);
+	comment = memchr(line, ';', end - line);
 	if (comment) {
+		if (comment[0] == line[0]) {
+			return;
+		}
 		end = comment;
+		*end = '\0';
+		comment = strip(comment + 1);
 	}
 
 	char *labeldelim = memchr(line, ':', end - prevdelim);
