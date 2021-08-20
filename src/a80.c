@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "arr.h"
+#include "list.h"
 
 static unsigned char output[BUFSIZ];
 static unsigned short addr;
@@ -90,16 +90,27 @@ parse(char *line)
 static void
 assemble(struct arr *lines, FILE *outfile)
 {
+static void
+assemble(struct list *lines, FILE *outfile)
+{
+	struct node *currentline = lines->head;
+
 	/* Record address of label declarations. */
 	pass = 1;
-	for (lineno = 0; lineno < lines->size; ++lineno) {
-		parse(lines->items[lineno]);
+	while (currentline != NULL) {
+		++lineno;
+		parse((char *)currentline->value);
+		process();
+		currentline = currentline->next;
 	}
 
 	/* Generate object code. */
 	pass = 2;
-	for (lineno = 0; lineno < lines->size; ++lineno) {
-		parse(lines->items[lineno]);
+	while (currentline != NULL) {
+		++lineno;
+		parse((char *)currentline->value);
+		process();
+		currentline = currentline->next;
 	}
 
 	fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
@@ -131,9 +142,9 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	struct arr *lines = initarr(64);
+	struct list *lines = initlist();
 	while ((nread = getline(&line, &len, istream)) != -1) {
-		addarr(lines, strdup(line));
+		push(lines, strdup(line));
 	}
 	free(line);
 
@@ -146,7 +157,7 @@ main(int argc, char *argv[])
 
 	assemble(lines, ostream);
 
-	freearr(lines);
+	freelist(lines);
 	fclose(istream);
 	fclose(ostream);
 
