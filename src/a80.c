@@ -155,11 +155,51 @@ pass_act(unsigned short size, int outbyte)
 	}
 }
 
+static int
+reg_mod8(char *reg)
+{
+	switch (reg[0]) {
+	case 'b':
+		return 0x00;
+	case 'c':
+		return 0x01;
+	case 'd':
+		return 0x02;
+	case 'e':
+		return 0x03;
+	case 'h':
+		return 0x04;
+	case 'l':
+		return 0x05;
+	case 'm':
+		return 0x06;
+	case 'a':
+		return 0x07;
+	default:
+		fprintf(stderr, "a80 %ld: invalid register %s\n", lineno, reg);
+		exit(EXIT_FAILURE);
+	}
+}
+
 static void
 nop(void)
 {
 	argcheck(!arg1 && !arg2);
 	pass_act(1, 0x00);
+}
+
+static void
+mov(void)
+{
+	argcheck(arg1 && arg2);
+	pass_act(1, 0x40 + (reg_mod8(arg1) << 3) + reg_mod8(arg2));
+}
+
+static void
+hlt(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0x76);
 }
 
 static void
@@ -172,6 +212,10 @@ process(void)
 
 	if (strcmp(op, "nop") == 0) {
 		nop();
+	} else if (strcmp(op, "mov")) {
+		mov();
+	} else if (strcmp(op, "hlt")) {
+		hlt();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
