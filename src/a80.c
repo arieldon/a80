@@ -5,8 +5,15 @@
 
 #include "list.h"
 
+struct symtab {
+	char *label;
+	unsigned short value;
+};
+
+static struct list *symtabs;
 static unsigned char output[BUFSIZ];
 static unsigned short addr;
+static size_t noutput;
 static size_t lineno;
 static int pass;
 
@@ -81,6 +88,10 @@ parse(char *line)
 		*end = '\0';
 		op = strip(op + 1);
 
+		if (op[0] == '\0') {
+			op = NULL;
+		}
+
 		label = line;
 	} else {
 		op = strip(line);
@@ -88,8 +99,85 @@ parse(char *line)
 }
 
 static void
-assemble(struct arr *lines, FILE *outfile)
+argcheck(int passed)
 {
+	if (!passed) {
+		fprintf(stderr,
+			"a80 %ld: arguments not correct for mnemonic %s\n",
+			lineno, op);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static int
+cmpsym(void *s, void *t)
+{
+	if (s == NULL || t == NULL) {
+		return 0;
+	}
+	return strcmp(
+		((struct symtab *)s)->label, ((struct symtab *)t)->label) == 0;
+}
+
+static struct symtab *
+addsym(void)
+{
+	if (find(symtabs, label, cmpsym) != NULL) {
+		fprintf(stderr, "a80 %ld: duplicate label %s\n", lineno, label);
+		exit(EXIT_FAILURE);
+	}
+
+	struct symtab *newsym = malloc(sizeof(struct symtab));
+	if (newsym == NULL) {
+		return NULL;
+	}
+
+	newsym->label = label;
+	newsym->value = addr;
+
+	push(symtabs, newsym);
+
+	return newsym;
+}
+
+static void
+pass_act(unsigned short size, int outbyte)
+{
+	if (pass == 1) {
+		if (label) {
+			addsym();
+		}
+		addr += size;
+	} else {
+		if (outbyte >= 0) {
+			output[noutput++] = (unsigned char)outbyte;
+		}
+	}
+}
+
+static void
+nop(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0x00);
+}
+
+static void
+process(void)
+{
+	if (!op && !arg1 && !arg2) {
+		pass_act(0, -1);
+		return;
+	}
+
+	if (strcmp(op, "nop") == 0) {
+		nop();
+	} else {
+		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
+		exit(EXIT_FAILURE);
+	}
+}
+
 static void
 assemble(struct list *lines, FILE *outfile)
 {
@@ -106,6 +194,8 @@ assemble(struct list *lines, FILE *outfile)
 
 	/* Generate object code. */
 	pass = 2;
+	lineno = 0;
+	currentline = lines->head;
 	while (currentline != NULL) {
 		++lineno;
 		parse((char *)currentline->value);
@@ -114,13 +204,6 @@ assemble(struct list *lines, FILE *outfile)
 	}
 
 	fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
-}
-
-static void
-errmsg(char *msg)
-{
-	fprintf(stderr, "a80 %ld: %s\n", lineno + 1, msg);
-	exit(EXIT_FAILURE);
 }
 
 int
@@ -155,9 +238,11 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	symtabs = initlist();
 	assemble(lines, ostream);
 
 	freelist(lines);
+	freelist(symtabs);
 	fclose(istream);
 	fclose(ostream);
 

@@ -44,6 +44,19 @@ push(struct list *list, void *value)
 	return node;
 }
 
+struct node *
+find(struct list *list, void *value, int (*cmp)(void *, void *))
+{
+	struct node *n = list->head;
+	while (n != NULL) {
+		if ((*cmp)(n->value, value)) {
+			return n;
+		}
+		n = n->next;
+	}
+	return NULL;
+}
+
 void
 freelist(struct list *list)
 {

@@ -15,6 +15,7 @@ struct list {
 
 struct list *initlist(void);
 struct node *push(struct list *list, void *value);
+struct node *find(struct list *list, void *value, int (*cmp)(void *, void *));
 void freelist(struct list *list);
 
 #endif
