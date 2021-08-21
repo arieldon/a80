@@ -203,6 +203,62 @@ hlt(void)
 }
 
 static void
+add(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x80 + reg_mod8(arg1));
+}
+
+static void
+adc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x88 + reg_mod8(arg1));
+}
+
+static void
+sub(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x90 + reg_mod8(arg1));
+}
+
+static void
+sbb(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x98 + reg_mod8(arg1));
+}
+
+static void
+ana(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xa0 + reg_mod8(arg1));
+}
+
+static void
+xra(void)
+{
+	argcheck(arg1 && arg2);
+	pass_act(1, 0xa8 + reg_mod8(arg1));
+}
+
+static void
+ora(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xb0 + reg_mod8(arg1));
+}
+
+static void
+cmp(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xb8 + reg_mod8(arg1));
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -216,6 +272,22 @@ process(void)
 		mov();
 	} else if (strcmp(op, "hlt")) {
 		hlt();
+	} else if (strcmp(op, "add")) {
+		add();
+	} else if (strcmp(op, "adc")) {
+		adc();
+	} else if (strcmp(op, "sub")) {
+		sub();
+	} else if (strcmp(op, "sbb")) {
+		sbb();
+	} else if (strcmp(op, "ana")) {
+		ana();
+	} else if (strcmp(op, "xra")) {
+		xra();
+	} else if (strcmp(op, "ora")) {
+		ora();
+	} else if (strcmp(op, "cmp")) {
+		cmp();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
