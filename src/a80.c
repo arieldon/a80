@@ -452,6 +452,20 @@ in(void)
 }
 
 static void
+di(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xf3);
+}
+
+static void
+ei(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xfb);
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -513,6 +527,10 @@ process(void)
 		out();
 	} else if (strcmp(op, "in") == 0) {
 		in();
+	} else if (strcmp(op, "di") == 0) {
+		di();
+	} else if (strcmp(op, "ei") == 0) {
+		ei();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
