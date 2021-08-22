@@ -268,25 +268,25 @@ process(void)
 
 	if (strcmp(op, "nop") == 0) {
 		nop();
-	} else if (strcmp(op, "mov")) {
+	} else if (strcmp(op, "mov") == 0) {
 		mov();
-	} else if (strcmp(op, "hlt")) {
+	} else if (strcmp(op, "hlt") == 0) {
 		hlt();
-	} else if (strcmp(op, "add")) {
+	} else if (strcmp(op, "add") == 0) {
 		add();
-	} else if (strcmp(op, "adc")) {
+	} else if (strcmp(op, "adc") == 0) {
 		adc();
-	} else if (strcmp(op, "sub")) {
+	} else if (strcmp(op, "sub") == 0) {
 		sub();
-	} else if (strcmp(op, "sbb")) {
+	} else if (strcmp(op, "sbb") == 0) {
 		sbb();
-	} else if (strcmp(op, "ana")) {
+	} else if (strcmp(op, "ana") == 0) {
 		ana();
-	} else if (strcmp(op, "xra")) {
+	} else if (strcmp(op, "xra") == 0) {
 		xra();
-	} else if (strcmp(op, "ora")) {
+	} else if (strcmp(op, "ora") == 0) {
 		ora();
-	} else if (strcmp(op, "cmp")) {
+	} else if (strcmp(op, "cmp") == 0) {
 		cmp();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
