@@ -155,6 +155,59 @@ pass_act(unsigned short size, int outbyte)
 	}
 }
 
+static unsigned short
+numcheck(char *input)
+{
+	unsigned short num;
+	char *end = input + strlen(input) - 1;
+
+	/* TODO Test for overflow? */
+	if (*end == 'h') {
+		*end = '\0';
+		num = (unsigned short)strtol(input, &end, 16);
+	} else {
+		num = (unsigned short)strtol(input, &end, 10);
+	}
+
+	return num;
+}
+
+static void
+imm(void)
+{
+	unsigned short num;
+	int found = 0;
+
+	if (isdigit(arg1[0])) {
+		num = numcheck(arg1);
+	} else {
+		if (pass == 2) {
+			struct symtab *symbol;
+			struct node *node = symtabs->head;
+
+			while (node != NULL) {
+				symbol = (struct symtab *)(node->value);
+				if (strcmp(arg1, symbol->label) == 0) {
+					num = symbol->value;
+					found = 1;
+					break;
+				}
+				node = node->next;
+			}
+
+			if (!found) {
+				fprintf(stderr, "a80 %ld: label %s undefined\n",
+					lineno, arg1);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		if (pass == 2) {
+			output[noutput++] = (unsigned char)num;
+		}
+	}
+}
+
 static int
 reg_mod8(char *reg)
 {
@@ -259,6 +312,70 @@ cmp(void)
 }
 
 static void
+adi(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xc6);
+	imm();
+}
+
+static void
+aci(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xce);
+	imm();
+}
+
+static void
+sui(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xd6);
+	imm();
+}
+
+static void
+sbi(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xde);
+	imm();
+}
+
+static void
+ani(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xe6);
+	imm();
+}
+
+static void
+xri(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xee);
+	imm();
+}
+
+static void
+ori(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xf6);
+	imm();
+}
+
+static void
+cpi(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xfe);
+	imm();
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -288,6 +405,22 @@ process(void)
 		ora();
 	} else if (strcmp(op, "cmp") == 0) {
 		cmp();
+	} else if (strcmp(op, "adi") == 0) {
+		adi();
+	} else if (strcmp(op, "aci") == 0) {
+		aci();
+	} else if (strcmp(op, "sui") == 0) {
+		sui();
+	} else if (strcmp(op, "sbi") == 0) {
+		sbi();
+	} else if (strcmp(op, "ani") == 0) {
+		ani();
+	} else if (strcmp(op, "xri") == 0) {
+		xri();
+	} else if (strcmp(op, "ori") == 0) {
+		ori();
+	} else if (strcmp(op, "cpi") == 0) {
+		cpi();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
