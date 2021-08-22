@@ -28,7 +28,7 @@ initlist(void)
 }
 
 struct node *
-push(struct list *list, void *value)
+append(struct list *list, void *value)
 {
 	struct node *node = malloc(sizeof(struct node));
 	if (node == NULL) {

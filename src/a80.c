@@ -135,7 +135,7 @@ addsym(void)
 	newsym->label = label;
 	newsym->value = addr;
 
-	push(symtabs, newsym);
+	append(symtabs, newsym);
 
 	return newsym;
 }
@@ -230,6 +230,24 @@ reg_mod8(char *reg)
 		return 0x07;
 	default:
 		fprintf(stderr, "a80 %ld: invalid register %s\n", lineno, reg);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static int
+reg_mod16(void)
+{
+	if (strcmp(arg1, "b") == 0) {
+		return 0x00;
+	} else if (strcmp(arg1, "d") == 0) {
+		return 0x10;
+	} else if (strcmp(arg1, "h") == 0) {
+		return 0x20;
+	} else if (strcmp(arg1, "psw") == 0) {
+		return 0x30;
+	} else {
+		fprintf(stderr, "a80 %ld: invalid register for opcode %s\n",
+			lineno, op);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -404,6 +422,20 @@ sphl(void)
 }
 
 static void
+push(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xc5 + reg_mod16());
+}
+
+static void
+pop(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xc1 + reg_mod16());
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -457,6 +489,10 @@ process(void)
 		xchg();
 	} else if (strcmp(op, "sphl") == 0) {
 		sphl();
+	} else if (strcmp(op, "push") == 0) {
+		push();
+	} else if (strcmp(op, "pop") == 0) {
+		pop();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
@@ -512,7 +548,7 @@ main(int argc, char *argv[])
 
 	struct list *lines = initlist();
 	while ((nread = getline(&line, &len, istream)) != -1) {
-		push(lines, strdup(line));
+		append(lines, strdup(line));
 	}
 	free(line);
 
