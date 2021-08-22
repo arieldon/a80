@@ -208,6 +208,41 @@ imm(void)
 	}
 }
 
+static void
+a16(void)
+{
+	unsigned short num;
+	int found = 0;
+
+	if (isdigit(arg1[0])) {
+		num = numcheck(arg1);
+	} else {
+			struct symtab *symbol;
+			struct node *node = symtabs->head;
+
+			while (node != NULL) {
+				symbol = (struct symtab *)(node->value);
+				if (strcmp(arg1, symbol->label) == 0) {
+					num = symbol->value;
+					found = 1;
+					break;
+				}
+				node = node->next;
+			}
+
+			if (!found) {
+				fprintf(stderr, "a80 %ld: label %s undefined\n",
+					lineno, arg1);
+				exit(EXIT_FAILURE);
+			}
+	}
+
+	if (pass == 2) {
+		output[noutput++] = (unsigned char)(num & 0xff);
+		output[noutput++] = (unsigned char)((num >> 8) & 0xff);
+	}
+}
+
 static int
 reg_mod8(char *reg)
 {
@@ -466,6 +501,213 @@ ei(void)
 }
 
 static void
+rnz(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xc0);
+}
+
+static void
+jnz(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(3, 0xc2);
+	a16();
+}
+
+static void
+jmp(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(3, 0xc3);
+	a16();
+}
+
+static void
+cnz(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xc4);
+	a16();
+}
+
+static void
+rz(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xc8);
+}
+
+static void
+ret(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xc9);
+}
+
+static void
+jz(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xca);
+	a16();
+}
+
+static void
+cz(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xcc);
+	a16();
+}
+
+static void
+call(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xcd);
+	a16();
+}
+
+static void
+rnc(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xd0);
+}
+
+static void
+jnc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xd2);
+	a16();
+}
+
+static void
+cnc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xd4);
+	a16();
+}
+
+static void
+rc(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xd8);
+}
+
+static void
+jc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0xda);
+	a16();
+}
+
+static void
+cc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xdc);
+	a16();
+}
+
+static void
+rpo(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xe0);
+}
+
+static void
+jpo(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xe2);
+	a16();
+}
+
+static void
+cpo(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xe4);
+	a16();
+}
+
+static void
+rpe(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xe8);
+}
+
+static void
+jpe(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xea);
+	a16();
+}
+
+static void
+cpe(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xce);
+	a16();
+}
+
+static void
+rp(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xf0);
+}
+
+static void
+jp(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xf2);
+	a16();
+}
+
+static void
+cp(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xf4);
+	a16();
+}
+
+static void
+rm(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xf8);
+}
+
+static void
+jm(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xfa);
+	a16();
+}
+
+static void
+cm(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0xfc);
+	a16();
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -531,6 +773,60 @@ process(void)
 		di();
 	} else if (strcmp(op, "ei") == 0) {
 		ei();
+	} else if (strcmp(op, "rnz") == 0) {
+		rnz();
+	} else if (strcmp(op, "jnz") == 0) {
+		jnz();
+	} else if (strcmp(op, "jmp") == 0) {
+		jmp();
+	} else if (strcmp(op, "cnz") == 0) {
+		cnz();
+	} else if (strcmp(op, "rz") == 0) {
+		rz();
+	} else if (strcmp(op, "ret") == 0) {
+		ret();
+	} else if (strcmp(op, "jz") == 0) {
+		jz();
+	} else if (strcmp(op, "cz") == 0) {
+		cz();
+	} else if (strcmp(op, "call") == 0) {
+		call();
+	} else if (strcmp(op, "rnc") == 0) {
+		rnc();
+	} else if (strcmp(op, "jnc") == 0) {
+		jnc();
+	} else if (strcmp(op, "cnc") == 0) {
+		cnc();
+	} else if (strcmp(op, "rc") == 0) {
+		rc();
+	} else if (strcmp(op, "jc") == 0) {
+		jc();
+	} else if (strcmp(op, "cc") == 0) {
+		cc();
+	} else if (strcmp(op, "rpo") == 0) {
+		rpo();
+	} else if (strcmp(op, "jpo") == 0) {
+		jpo();
+	} else if (strcmp(op, "cpo") == 0) {
+		cpo();
+	} else if (strcmp(op, "rpe") == 0) {
+		rpe();
+	} else if (strcmp(op, "jpe") == 0) {
+		jpe();
+	} else if (strcmp(op, "cpe") == 0) {
+		cpe();
+	} else if (strcmp(op, "rp") == 0) {
+		rp();
+	} else if (strcmp(op, "jp") == 0) {
+		jp();
+	} else if (strcmp(op, "cp") == 0) {
+		cp();
+	} else if (strcmp(op, "rm") == 0) {
+		rm();
+	} else if (strcmp(op, "jm") == 0) {
+		jm();
+	} else if (strcmp(op, "cm") == 0) {
+		cm();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
