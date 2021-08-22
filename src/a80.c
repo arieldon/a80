@@ -376,6 +376,34 @@ cpi(void)
 }
 
 static void
+xthl(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xe3);
+}
+
+static void
+pchl(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xe9);
+}
+
+static void
+xchg(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xeb);
+}
+
+static void
+sphl(void)
+{
+	argcheck(!arg1 && !arg2);
+	pass_act(1, 0xf9);
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -421,6 +449,14 @@ process(void)
 		ori();
 	} else if (strcmp(op, "cpi") == 0) {
 		cpi();
+	} else if (strcmp(op, "xthl") == 0) {
+		xthl();
+	} else if (strcmp(op, "pchl") == 0) {
+		pchl();
+	} else if (strcmp(op, "xchg") == 0) {
+		xchg();
+	} else if (strcmp(op, "sphl") == 0) {
+		sphl();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
