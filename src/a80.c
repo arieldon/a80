@@ -436,6 +436,22 @@ pop(void)
 }
 
 static void
+out(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xd3);
+	imm();
+}
+
+static void
+in(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(2, 0xdb);
+	imm();
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -493,6 +509,10 @@ process(void)
 		push();
 	} else if (strcmp(op, "pop") == 0) {
 		pop();
+	} else if (strcmp(op, "out") == 0) {
+		out();
+	} else if (strcmp(op, "in") == 0) {
+		in();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
