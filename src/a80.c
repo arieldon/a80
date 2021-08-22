@@ -708,6 +708,21 @@ cm(void)
 }
 
 static void
+rst(void)
+{
+	argcheck(arg1 && !arg2);
+
+	int offset = (int)strtol(arg1, (char **)NULL, 10);
+	if (offset >= 0 && offset <= 7) {
+		pass_act(1, 0xc7 + (offset << 3));
+	} else {
+		fprintf(stderr, "a80 %ld: invalid reset vector %s\n",
+			lineno, arg1);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -827,6 +842,8 @@ process(void)
 		jm();
 	} else if (strcmp(op, "cm") == 0) {
 		cm();
+	} else if (strcmp(op, "rst") == 0) {
+		rst();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
