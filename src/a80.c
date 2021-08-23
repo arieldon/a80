@@ -181,13 +181,13 @@ imm(void)
 		num = numcheck(arg1);
 	} else {
 		if (pass == 2) {
-			struct symtab *symbol;
+			struct symtab *sym;
 			struct node *node = symtabs->head;
 
 			while (node != NULL) {
-				symbol = (struct symtab *)(node->value);
-				if (strcmp(arg1, symbol->label) == 0) {
-					num = symbol->value;
+				sym = (struct symtab *)(node->value);
+				if (sym && (strcmp(arg1, sym->label) == 0)) {
+					num = sym->value;
 					found = 1;
 					break;
 				}
@@ -216,13 +216,13 @@ a16(void)
 	if (isdigit(arg1[0])) {
 		num = numcheck(arg1);
 	} else {
-			struct symtab *symbol;
+			struct symtab *sym;
 			struct node *node = symtabs->head;
 
 			while (node != NULL) {
-				symbol = (struct symtab *)(node->value);
-				if (strcmp(arg1, symbol->label) == 0) {
-					num = symbol->value;
+				sym = (struct symtab *)(node->value);
+				if (sym && (strcmp(arg1, sym->label) == 0)) {
+					num = sym->value;
 					found = 1;
 					break;
 				}
