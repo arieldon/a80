@@ -346,7 +346,7 @@ ana(void)
 static void
 xra(void)
 {
-	argcheck(arg1 && arg2);
+	argcheck(arg1 && !arg2);
 	pass_act(1, 0xa8 + reg_mod8(arg1));
 }
 
