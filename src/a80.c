@@ -115,8 +115,7 @@ cmpsym(void *s, void *t)
 	if (s == NULL || t == NULL) {
 		return 0;
 	}
-	return strcmp(
-		((struct symtab *)s)->label, ((struct symtab *)t)->label) == 0;
+	return strcmp(((struct symtab *)s)->label, (char *)t) == 0;
 }
 
 static struct symtab *
