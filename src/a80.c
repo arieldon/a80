@@ -852,29 +852,35 @@ process(void)
 static void
 assemble(struct list *lines, FILE *outfile)
 {
-	struct node *currentline = lines->head;
+	struct node *line;
+
+	/*
+	 * parse() directly modifies the list. Therefore, copy the original
+	 * list for the second pass.
+	 */
+	struct list *linesdup = initlist();
+	for (line = lines->head; line != NULL; line = line->next) {
+		if (line->value != NULL) {
+			append(linesdup, strdup((char *)line->value));
+		}
+	}
 
 	/* Record address of label declarations. */
 	pass = 1;
-	while (currentline != NULL) {
-		++lineno;
-		parse((char *)currentline->value);
+	for (line = lines->head; line != NULL; line = line->next, ++lineno) {
+		parse((char *)line->value);
 		process();
-		currentline = currentline->next;
 	}
 
 	/* Generate object code. */
-	pass = 2;
-	lineno = 0;
-	currentline = lines->head;
-	while (currentline != NULL) {
-		++lineno;
-		parse((char *)currentline->value);
+	pass = 2, lineno = 0;
+	for (line = linesdup->head; line != NULL; line = line->next, ++lineno) {
+		parse((char *)line->value);
 		process();
-		currentline = currentline->next;
 	}
 
 	fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
+	freelist(linesdup);
 }
 
 int
