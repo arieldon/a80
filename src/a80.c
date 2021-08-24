@@ -722,6 +722,62 @@ rst(void)
 }
 
 static void
+rlc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x07);
+}
+
+static void
+rrc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x0f);
+}
+
+static void
+ral(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x17);
+}
+
+static void
+rar(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x1f);
+}
+
+static void
+daa(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x27);
+}
+
+static void
+cma(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x2f);
+}
+
+static void
+stc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x37);
+}
+
+static void
+cmc(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x3f);
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -843,6 +899,22 @@ process(void)
 		cm();
 	} else if (strcmp(op, "rst") == 0) {
 		rst();
+	} else if (strcmp(op, "rlc") == 0) {
+		rlc();
+	} else if (strcmp(op, "rrc") == 0) {
+		rrc();
+	} else if (strcmp(op, "ral") == 0) {
+		ral();
+	} else if (strcmp(op, "rar") == 0) {
+		rar();
+	} else if (strcmp(op, "daa") == 0) {
+		daa();
+	} else if (strcmp(op, "cma") == 0) {
+		cma();
+	} else if (strcmp(op, "stc") == 0) {
+		stc();
+	} else if (strcmp(op, "cmc") == 0) {
+		cmc();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
