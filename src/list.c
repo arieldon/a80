@@ -12,17 +12,9 @@ initlist(void)
 		free(list);
 		return NULL;
 	}
-	if ((list->tail = malloc(sizeof(struct node))) == NULL) {
-		free(list->head);
-		free(list);
-		return NULL;
-	}
 
+	list->head->next = NULL;
 	list->head->value = NULL;
-	list->head->next = list->tail;
-
-	list->tail->value = NULL;
-	list->tail->next = NULL;
 
 	return list;
 }
@@ -30,18 +22,20 @@ initlist(void)
 struct node *
 append(struct list *list, void *value)
 {
-	struct node *node = malloc(sizeof(struct node));
-	if (node == NULL) {
+	struct node *n = malloc(sizeof(struct node));
+	if (n == NULL) {
 		return NULL;
 	}
+	n->value = value;
+	n->next = NULL;
 
-	node->value = value;
-	node->next = NULL;
+	struct node *m = list->head;
+	while (m->next != NULL) {
+		m = m->next;
+	}
+	m->next = n;
 
-	list->tail->next = node;
-	list->tail = node;
-
-	return node;
+	return n;
 }
 
 struct node *

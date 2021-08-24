@@ -4,13 +4,12 @@
 #include <stdlib.h>
 
 struct node {
-	void *value;
 	struct node *next;
+	void *value;
 };
 
 struct list {
 	struct node *head;
-	struct node *tail;
 };
 
 struct list *initlist(void);
