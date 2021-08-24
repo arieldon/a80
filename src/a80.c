@@ -278,7 +278,21 @@ reg_mod16(void)
 	} else if (strcmp(arg1, "h") == 0) {
 		return 0x20;
 	} else if (strcmp(arg1, "psw") == 0) {
-		return 0x30;
+		if (strcmp(op, "pop") == 0 || strcmp(op, "push") == 0) {
+			return 0x30;
+		} else {
+			fprintf(stderr, "a80 %ld: psw may not be used with %s\n",
+				lineno, op);
+			exit(EXIT_FAILURE);
+		}
+	} else if (strcmp(arg1, "sp") == 0) {
+		if (strcmp(op, "pop") != 0 || strcmp(op, "push") != 0) {
+			return 0x30;
+		} else {
+			fprintf(stderr, "a80 %ld: sp may not be used with %s\n",
+				lineno, op);
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		fprintf(stderr, "a80 %ld: invalid register for opcode %s\n",
 			lineno, op);
@@ -778,6 +792,41 @@ cmc(void)
 }
 
 static void
+inx(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x03 + reg_mod16());
+}
+
+static void
+dad(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x09 + reg_mod16());
+}
+
+static void
+dcx(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x0b + reg_mod16());
+}
+
+static void
+inr(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x04 + (reg_mod8(arg1) << 3));
+}
+
+static void
+dcr(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(1, 0x05 + (reg_mod8(arg1) << 3));
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -915,6 +964,16 @@ process(void)
 		stc();
 	} else if (strcmp(op, "cmc") == 0) {
 		cmc();
+	} else if (strcmp(op, "inx") == 0) {
+		inx();
+	} else if (strcmp(op, "dad") == 0) {
+		dad();
+	} else if (strcmp(op, "dcx") == 0) {
+		dcx();
+	} else if (strcmp(op, "inr") == 0) {
+		inr();
+	} else if (strcmp(op, "dcr") == 0) {
+		dcr();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
