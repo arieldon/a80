@@ -10,6 +10,11 @@ struct symtab {
 	unsigned short value;
 };
 
+enum immtype {
+	IMM8 = 8,
+	IMM16 = 16,
+};
+
 static struct list *symtabs;
 static unsigned char output[BUFSIZ];
 static unsigned short addr;
@@ -172,13 +177,20 @@ numcheck(char *input)
 }
 
 static void
-imm(void)
+imm(enum immtype type)
 {
+	char *arg;
 	unsigned short num;
 	int found = 0;
 
+	if (strcmp(op, "lxi") == 0 || strcmp(op, "mvi") == 0) {
+		arg = arg2;
+	} else {
+		arg = arg1;
+	}
+
 	if (isdigit(arg1[0])) {
-		num = numcheck(arg1);
+		num = numcheck(arg);
 	} else {
 		if (pass == 2) {
 			struct symtab *sym;
@@ -202,7 +214,10 @@ imm(void)
 		}
 
 		if (pass == 2) {
-			output[noutput++] = (unsigned char)num;
+			output[noutput++] = (unsigned char)(num & 0xff);
+			if (type == IMM16) {
+				output[noutput++] = (unsigned char)((num >> 8) & 0xff);
+			}
 		}
 	}
 }
@@ -382,7 +397,7 @@ adi(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xc6);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -390,7 +405,7 @@ aci(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xce);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -398,7 +413,7 @@ sui(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xd6);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -406,7 +421,7 @@ sbi(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xde);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -414,7 +429,7 @@ ani(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xe6);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -422,7 +437,7 @@ xri(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xee);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -430,7 +445,7 @@ ori(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xf6);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -438,7 +453,7 @@ cpi(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xfe);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -488,7 +503,7 @@ out(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xd3);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -496,7 +511,7 @@ in(void)
 {
 	argcheck(arg1 && !arg2);
 	pass_act(2, 0xdb);
-	imm();
+	imm(IMM8);
 }
 
 static void
@@ -899,6 +914,22 @@ lda(void)
 }
 
 static void
+mvi(void)
+{
+	argcheck(arg1 && arg2);
+	pass_act(2, 0x06 + (reg_mod8(arg1) << 3));
+	imm(IMM8);
+}
+
+static void
+lxi(void)
+{
+	argcheck(arg1 && arg2);
+	pass_act(3, 0x01 + reg_mod16());
+	imm(IMM16);
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -1058,6 +1089,10 @@ process(void)
 		sta();
 	} else if (strcmp(op, "lda") == 0) {
 		lda();
+	} else if (strcmp(op, "mvi") == 0) {
+		mvi();
+	} else if (strcmp(op, "lxi") == 0) {
+		lxi();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
