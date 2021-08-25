@@ -67,6 +67,27 @@ parse(char *line)
 		comment = strip(comment + 1);
 	}
 
+	/*
+	 * If there exists a single quote or tick in the line after the comment
+	 * has been tokenized and separated, then `arg1` consists of a string
+	 * and `arg2` is empty.
+	 *
+	 * First find the opening single quote, then the closing single quote.
+	 *
+	 * This condition exists for instruction `db`.
+	 */
+	if ((arg1 = strchr(line, '\'')) != NULL) {
+		end = arg1;
+		*end = '\0';
+		arg1 = strip(arg1 + 1);
+
+		/* Find closing single quote. */
+		end = strchr(arg1, '\'');
+		*end = '\0';
+
+		goto setop;
+	}
+
 	arg2 = memchr(line, ',', end - line);
 	if (arg2) {
 		end = arg2;
@@ -86,7 +107,7 @@ parse(char *line)
 			arg1 = strip(arg1 + 1);
 		}
 	}
-
+setop:
 	op = memchr(line, ':', end - line);
 	if (op) {
 		end = op;
@@ -963,6 +984,28 @@ equ(void)
 		addr = tmp;
 	}
 }
+
+static void
+db(void)
+{
+	argcheck(arg1 && !arg2);
+
+	if (isdigit(arg1[0])) {
+		pass_act(1, numcheck(arg1));
+	} else {
+		if (pass == 1) {
+			if (label) {
+				addsym();
+			}
+		} else {
+			for (char *c = arg1; *c != '\0'; ++c) {
+				output[noutput++] = (unsigned char)*c;
+			}
+		}
+		addr += strlen(arg1);
+	}
+}
+
 static void
 process(void)
 {
@@ -1131,6 +1174,8 @@ process(void)
 		org();
 	} else if (strcmp(op, "equ") == 0) {
 		equ();
+	} else if (strcmp(op, "db") == 0) {
+		db();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
