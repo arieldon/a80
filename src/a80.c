@@ -1158,8 +1158,11 @@ main(int argc, char *argv[])
 	}
 	free(line);
 
-	/* TODO Dynamically name the file using the stem of argv[1]. */
-	ostream = fopen("x.com", "w+");
+	char outname[BUFSIZ] = { 0 };
+	char *stem = strtok(argv[1], ".");
+	snprintf(outname, BUFSIZ, "%s.com", stem);
+
+	ostream = fopen(outname, "w+");
 	if (ostream == NULL) {
 		perror("fopen");
 		exit(EXIT_FAILURE);
