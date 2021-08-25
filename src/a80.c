@@ -827,6 +827,78 @@ dcr(void)
 }
 
 static void
+stax(void)
+{
+	argcheck(arg1 && !arg2);
+
+	switch (arg1[0]) {
+	case 'b':
+		pass_act(1, 0x02);
+		break;
+	case 'd':
+		pass_act(1, 0x12);
+		break;
+	default:
+		fprintf(stderr,
+			"a80 %ld: stax operates on registers b and d.\n",
+			lineno);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void
+ldax(void)
+{
+	argcheck(arg1 && !arg2);
+
+	switch (arg1[0]) {
+	case 'b':
+		pass_act(1, 0x0a);
+		break;
+	case 'd':
+		pass_act(1, 0x1a);
+		break;
+	default:
+		fprintf(stderr,
+			"a80 %ld: ldax operates on registers b and d.\n",
+			lineno);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void
+shld(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0x22);
+	a16();
+}
+
+static void
+lhld(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0x2a);
+	a16();
+}
+
+static void
+sta(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0x32);
+	a16();
+}
+
+static void
+lda(void)
+{
+	argcheck(arg1 && !arg2);
+	pass_act(3, 0x3a);
+	a16();
+}
+
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -974,6 +1046,18 @@ process(void)
 		inr();
 	} else if (strcmp(op, "dcr") == 0) {
 		dcr();
+	} else if (strcmp(op, "stax") == 0) {
+		stax();
+	} else if (strcmp(op, "ldax") == 0) {
+		ldax();
+	} else if (strcmp(op, "shld") == 0) {
+		shld();
+	} else if (strcmp(op, "lhld") == 0) {
+		lhld();
+	} else if (strcmp(op, "sta") == 0) {
+		sta();
+	} else if (strcmp(op, "lda") == 0) {
+		lda();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
