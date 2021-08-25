@@ -930,6 +930,40 @@ lxi(void)
 }
 
 static void
+org(void)
+{
+	argcheck(!label && arg1 && !arg2);
+
+	if (isdigit(arg1[0])) {
+		if (pass == 1) {
+			addr = numcheck(arg1);
+		}
+	} else {
+		fprintf(stderr, "a80 %ld: org requires a number.\n", lineno);
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void
+equ(void)
+{
+	unsigned short value;
+
+	if (!label) {
+		fprintf(stderr, "a80 %ld: equ statement requires a label.\n",
+			lineno);
+		exit(EXIT_FAILURE);
+	}
+
+	value = numcheck(arg1);
+	if (pass == 1) {
+		unsigned short tmp = addr;
+		addr = value;
+		addsym();
+		addr = tmp;
+	}
+}
+static void
 process(void)
 {
 	if (!op && !arg1 && !arg2) {
@@ -1093,6 +1127,10 @@ process(void)
 		mvi();
 	} else if (strcmp(op, "lxi") == 0) {
 		lxi();
+	} else if (strcmp(op, "org") == 0) {
+		org();
+	} else if (strcmp(op, "equ") == 0) {
+		equ();
 	} else {
 		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
 		exit(EXIT_FAILURE);
