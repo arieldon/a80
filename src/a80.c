@@ -189,7 +189,7 @@ imm(enum immtype type)
 		arg = arg1;
 	}
 
-	if (isdigit(arg1[0])) {
+	if (isdigit(arg[0])) {
 		num = numcheck(arg);
 	} else {
 		if (pass == 2) {
@@ -198,7 +198,7 @@ imm(enum immtype type)
 
 			while (node != NULL) {
 				sym = (struct symtab *)(node->value);
-				if (sym && (strcmp(arg1, sym->label) == 0)) {
+				if (sym && (strcmp(arg, sym->label) == 0)) {
 					num = sym->value;
 					found = 1;
 					break;
@@ -208,16 +208,16 @@ imm(enum immtype type)
 
 			if (!found) {
 				fprintf(stderr, "a80 %ld: label %s undefined\n",
-					lineno, arg1);
+					lineno, arg);
 				exit(EXIT_FAILURE);
 			}
 		}
+	}
 
-		if (pass == 2) {
-			output[noutput++] = (unsigned char)(num & 0xff);
-			if (type == IMM16) {
-				output[noutput++] = (unsigned char)((num >> 8) & 0xff);
-			}
+	if (pass == 2) {
+		output[noutput++] = (unsigned char)(num & 0xff);
+		if (type == IMM16) {
+			output[noutput++] = (unsigned char)((num >> 8) & 0xff);
 		}
 	}
 }
