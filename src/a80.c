@@ -337,6 +337,32 @@ reg_mod16(void)
 	}
 }
 
+static unsigned short
+dollar(void)
+{
+	unsigned short num = addr;
+
+	if (strlen(arg1) > 1) {
+		if (arg1[1] == '+') {
+			num += numcheck(arg1 + 2);
+		} else if (arg1[1] == '-') {
+			num -= numcheck(arg1 + 2);
+		} else if (arg1[1] == '*') {
+			num *= numcheck(arg1 + 2);
+		} else if (arg1[1] == '/') {
+			num /= numcheck(arg1 + 2);
+		} else if (arg1[1] == '%') {
+			num %= numcheck(arg1 + 2);
+		} else {
+			fprintf(stderr, "a80 %ld: invalid operator in equ\n",
+				lineno);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return num;
+}
+
 static void
 nop(void)
 {
@@ -995,7 +1021,12 @@ equ(void)
 		exit(EXIT_FAILURE);
 	}
 
-	value = numcheck(arg1);
+	if (arg1[0] == '$') {
+		value = dollar();
+	} else {
+		value = numcheck(arg1);
+	}
+
 	if (pass == 1) {
 		unsigned short tmp = addr;
 		addr = value;
