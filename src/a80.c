@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -951,6 +952,24 @@ lxi(void)
 }
 
 static void
+name(void)
+{
+	argcheck(!label && arg1 && !arg2);
+}
+
+static void
+title(void)
+{
+	argcheck(!label && arg1 && !arg2);
+}
+
+static void
+end(void)
+{
+	argcheck(!label && !arg1 && !arg2);
+}
+
+static void
 org(void)
 {
 	argcheck(!label && arg1 && !arg2);
@@ -1170,6 +1189,12 @@ process(void)
 		mvi();
 	} else if (strcmp(op, "lxi") == 0) {
 		lxi();
+	} else if (strcmp(op, "name") == 0) {
+		name();
+	} else if (strcmp(op, "title") == 0) {
+		title();
+	} else if (strcmp(op, "end") == 0) {
+		end();
 	} else if (strcmp(op, "org") == 0) {
 		org();
 	} else if (strcmp(op, "equ") == 0) {
