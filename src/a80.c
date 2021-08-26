@@ -1005,6 +1005,40 @@ equ(void)
 }
 
 static void
+dw(void)
+{
+	argcheck(arg1 && !arg2);
+
+	if (pass == 1) {
+		if (label) {
+			addsym();
+		}
+	}
+	a16();
+
+	addr += 2;
+}
+
+static void
+ds(void)
+{
+	argcheck(arg1 && !arg2);
+
+	if (pass == 1) {
+		if (label) {
+			addsym();
+		}
+	} else {
+		unsigned short num = numcheck(arg1);
+		for (size_t i = 0; i < num; ++i) {
+			output[++noutput] = 0;
+		}
+	}
+
+	addr += numcheck(arg1);
+}
+
+static void
 db(void)
 {
 	argcheck(arg1 && !arg2);
@@ -1199,6 +1233,10 @@ process(void)
 		org();
 	} else if (strcmp(op, "equ") == 0) {
 		equ();
+	} else if (strcmp(op, "dw") == 0) {
+		dw();
+	} else if (strcmp(op, "ds") == 0) {
+		ds();
 	} else if (strcmp(op, "db") == 0) {
 		db();
 	} else {
