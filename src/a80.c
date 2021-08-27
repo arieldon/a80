@@ -137,12 +137,12 @@ argcheck(int passed)
 }
 
 static int
-cmpsym(void *s, void *t)
+cmpsym(void *symtab, void *str)
 {
-	if (s == NULL || t == NULL) {
+	if (symtab == NULL || str == NULL) {
 		return 0;
 	}
-	return strcmp(((struct symtab *)s)->label, (char *)t) == 0;
+	return strcmp(((struct symtab *)symtab)->label, (char *)str) == 0;
 }
 
 static struct symtab *
