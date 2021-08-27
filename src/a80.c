@@ -733,7 +733,7 @@ static void
 cpe(void)
 {
 	argcheck(arg1 && !arg2);
-	pass_act(3, 0xce);
+	pass_act(3, 0xec);
 	a16();
 }
 
@@ -808,21 +808,21 @@ rlc(void)
 static void
 rrc(void)
 {
-	argcheck(arg1 && !arg2);
+	argcheck(!arg1 && !arg2);
 	pass_act(1, 0x0f);
 }
 
 static void
 ral(void)
 {
-	argcheck(arg1 && !arg2);
+	argcheck(!arg1 && !arg2);
 	pass_act(1, 0x17);
 }
 
 static void
 rar(void)
 {
-	argcheck(arg1 && !arg2);
+	argcheck(!arg1 && !arg2);
 	pass_act(1, 0x1f);
 }
 
@@ -843,7 +843,7 @@ cma(void)
 static void
 stc(void)
 {
-	argcheck(arg1 && !arg2);
+	argcheck(!arg1 && !arg2);
 	pass_act(1, 0x37);
 }
 
