@@ -17,7 +17,7 @@ enum immtype {
 };
 
 static struct list *symtabs;
-static unsigned char output[BUFSIZ];
+static unsigned char output[65536];
 static unsigned short addr;
 static size_t noutput;
 static size_t lineno;
@@ -1306,7 +1306,7 @@ assemble(struct list *lines, FILE *outfile)
 		process();
 	}
 
-	fwrite(output, sizeof(unsigned char), BUFSIZ, outfile);
+	fwrite(output, sizeof(unsigned char), sizeof(output), outfile);
 	freelist(linesdup);
 }
 
