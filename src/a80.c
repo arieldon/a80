@@ -6,6 +6,12 @@
 
 #include "list.h"
 
+#define errmsg(fmt, ...) \
+	do { \
+		fprintf(stderr, "a80 %ld: " #fmt "\n", lineno, __VA_ARGS__); \
+		exit(EXIT_FAILURE); \
+	} while(0)
+
 struct symtab {
 	char *label;
 	unsigned short value;
@@ -129,10 +135,7 @@ static void
 argcheck(int passed)
 {
 	if (!passed) {
-		fprintf(stderr,
-			"a80 %ld: arguments not correct for mnemonic %s\n",
-			lineno, op);
-		exit(EXIT_FAILURE);
+		errmsg("%s", "arguments not not correct for mnemonic");
 	}
 }
 
@@ -149,8 +152,7 @@ static struct symtab *
 addsym(void)
 {
 	if (find(symtabs, label, cmpsym) != NULL) {
-		fprintf(stderr, "a80 %ld: duplicate label %s\n", lineno, label);
-		exit(EXIT_FAILURE);
+		errmsg("duplicate label %s", label);
 	}
 
 	struct symtab *newsym = malloc(sizeof(struct symtab));
@@ -229,9 +231,7 @@ imm(enum immtype type)
 			}
 
 			if (!found) {
-				fprintf(stderr, "a80 %ld: label %s undefined\n",
-					lineno, arg);
-				exit(EXIT_FAILURE);
+				errmsg("label %s undefined", arg);
 			}
 		}
 	}
@@ -267,9 +267,7 @@ a16(void)
 			}
 
 			if (!found) {
-				fprintf(stderr, "a80 %ld: label %s undefined\n",
-					lineno, arg1);
-				exit(EXIT_FAILURE);
+				errmsg("label %s undefined", arg1);
 			}
 	}
 
@@ -300,8 +298,7 @@ reg_mod8(char *reg)
 	case 'a':
 		return 0x07;
 	default:
-		fprintf(stderr, "a80 %ld: invalid register %s\n", lineno, reg);
-		exit(EXIT_FAILURE);
+		errmsg("invalid register %s", reg);
 	}
 }
 
@@ -318,22 +315,16 @@ reg_mod16(void)
 		if (strcmp(op, "pop") == 0 || strcmp(op, "push") == 0) {
 			return 0x30;
 		} else {
-			fprintf(stderr, "a80 %ld: psw may not be used with %s\n",
-				lineno, op);
-			exit(EXIT_FAILURE);
+			errmsg("psw may not be used with %s", op);
 		}
 	} else if (strcmp(arg1, "sp") == 0) {
 		if (strcmp(op, "pop") != 0 || strcmp(op, "push") != 0) {
 			return 0x30;
 		} else {
-			fprintf(stderr, "a80 %ld: sp may not be used with %s\n",
-				lineno, op);
-			exit(EXIT_FAILURE);
+			errmsg("sp may not be used with %s", op);
 		}
 	} else {
-		fprintf(stderr, "a80 %ld: invalid register for opcode %s\n",
-			lineno, op);
-		exit(EXIT_FAILURE);
+		errmsg("invalid register for opcode %s", op);
 	}
 }
 
@@ -354,9 +345,7 @@ dollar(void)
 		} else if (arg1[1] == '%') {
 			num %= numcheck(arg1 + 2);
 		} else {
-			fprintf(stderr, "a80 %ld: invalid operator in equ\n",
-				lineno);
-			exit(EXIT_FAILURE);
+			errmsg("%s", "invalid operator in equ");
 		}
 	}
 
@@ -792,9 +781,7 @@ rst(void)
 	if (offset >= 0 && offset <= 7) {
 		pass_act(1, 0xc7 + (offset << 3));
 	} else {
-		fprintf(stderr, "a80 %ld: invalid reset vector %s\n",
-			lineno, arg1);
-		exit(EXIT_FAILURE);
+		errmsg("invalid reset vector %s", arg1);
 	}
 }
 
@@ -902,10 +889,7 @@ stax(void)
 		pass_act(1, 0x12);
 		break;
 	default:
-		fprintf(stderr,
-			"a80 %ld: stax operates on registers b and d.\n",
-			lineno);
-		exit(EXIT_FAILURE);
+		errmsg("%s", "stax operates on registers b and d");
 	}
 }
 
@@ -922,10 +906,7 @@ ldax(void)
 		pass_act(1, 0x1a);
 		break;
 	default:
-		fprintf(stderr,
-			"a80 %ld: ldax operates on registers b and d.\n",
-			lineno);
-		exit(EXIT_FAILURE);
+		errmsg("%s", "ladax operates on registers b and d");
 	}
 }
 
@@ -1005,8 +986,7 @@ org(void)
 			addr = numcheck(arg1);
 		}
 	} else {
-		fprintf(stderr, "a80 %ld: org requires a number.\n", lineno);
-		exit(EXIT_FAILURE);
+		errmsg("%s", "org requires a number");
 	}
 }
 
@@ -1016,9 +996,7 @@ equ(void)
 	unsigned short value;
 
 	if (!label) {
-		fprintf(stderr, "a80 %ld: equ statement requires a label.\n",
-			lineno);
-		exit(EXIT_FAILURE);
+		errmsg("%s", "equ statement requires a label");
 	}
 
 	if (arg1[0] == '$') {
@@ -1271,8 +1249,7 @@ process(void)
 	} else if (strcmp(op, "db") == 0) {
 		db();
 	} else {
-		fprintf(stderr, "a80 %ld: unknown mnemonic: %s\n", lineno, op);
-		exit(EXIT_FAILURE);
+		errmsg("unknown mnemonic: %s", op);
 	}
 }
 
