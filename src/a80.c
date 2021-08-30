@@ -11,6 +11,11 @@
 		fprintf(stderr, "a80 %ld: " #fmt "\n", lineno, __VA_ARGS__); \
 		exit(EXIT_FAILURE); \
 	} while(0)
+#define assertarg(args) \
+	do { \
+		if (!args) \
+			errmsg("%s", "arguments not correct for mnemonic"); \
+	} while (0)
 
 struct symtab {
 	char *label;
@@ -128,14 +133,6 @@ setop:
 		label = line;
 	} else {
 		op = strip(line);
-	}
-}
-
-static void
-argcheck(int passed)
-{
-	if (!passed) {
-		errmsg("%s", "arguments not not correct for mnemonic");
 	}
 }
 
@@ -355,84 +352,84 @@ dollar(void)
 static void
 nop(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x00);
 }
 
 static void
 mov(void)
 {
-	argcheck(arg1 && arg2);
+	assertarg(arg1 && arg2);
 	pass_act(1, 0x40 + (reg_mod8(arg1) << 3) + reg_mod8(arg2));
 }
 
 static void
 hlt(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x76);
 }
 
 static void
 add(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x80 + reg_mod8(arg1));
 }
 
 static void
 adc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x88 + reg_mod8(arg1));
 }
 
 static void
 sub(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x90 + reg_mod8(arg1));
 }
 
 static void
 sbb(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x98 + reg_mod8(arg1));
 }
 
 static void
 ana(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xa0 + reg_mod8(arg1));
 }
 
 static void
 xra(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xa8 + reg_mod8(arg1));
 }
 
 static void
 ora(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xb0 + reg_mod8(arg1));
 }
 
 static void
 cmp(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xb8 + reg_mod8(arg1));
 }
 
 static void
 adi(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xc6);
 	imm(IMM8);
 }
@@ -440,7 +437,7 @@ adi(void)
 static void
 aci(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xce);
 	imm(IMM8);
 }
@@ -448,7 +445,7 @@ aci(void)
 static void
 sui(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xd6);
 	imm(IMM8);
 }
@@ -456,7 +453,7 @@ sui(void)
 static void
 sbi(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xde);
 	imm(IMM8);
 }
@@ -464,7 +461,7 @@ sbi(void)
 static void
 ani(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xe6);
 	imm(IMM8);
 }
@@ -472,7 +469,7 @@ ani(void)
 static void
 xri(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xee);
 	imm(IMM8);
 }
@@ -480,7 +477,7 @@ xri(void)
 static void
 ori(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xf6);
 	imm(IMM8);
 }
@@ -488,7 +485,7 @@ ori(void)
 static void
 cpi(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xfe);
 	imm(IMM8);
 }
@@ -496,49 +493,49 @@ cpi(void)
 static void
 xthl(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xe3);
 }
 
 static void
 pchl(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xe9);
 }
 
 static void
 xchg(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xeb);
 }
 
 static void
 sphl(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xf9);
 }
 
 static void
 push(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xc5 + reg_mod16());
 }
 
 static void
 pop(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xc1 + reg_mod16());
 }
 
 static void
 out(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xd3);
 	imm(IMM8);
 }
@@ -546,7 +543,7 @@ out(void)
 static void
 in(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(2, 0xdb);
 	imm(IMM8);
 }
@@ -554,28 +551,28 @@ in(void)
 static void
 di(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xf3);
 }
 
 static void
 ei(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xfb);
 }
 
 static void
 rnz(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xc0);
 }
 
 static void
 jnz(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(3, 0xc2);
 	a16();
 }
@@ -583,7 +580,7 @@ jnz(void)
 static void
 jmp(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xc3);
 	a16();
 }
@@ -591,7 +588,7 @@ jmp(void)
 static void
 cnz(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xc4);
 	a16();
 }
@@ -599,21 +596,21 @@ cnz(void)
 static void
 rz(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xc8);
 }
 
 static void
 ret(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xc9);
 }
 
 static void
 jz(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xca);
 	a16();
 }
@@ -621,7 +618,7 @@ jz(void)
 static void
 cz(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xcc);
 	a16();
 }
@@ -629,7 +626,7 @@ cz(void)
 static void
 call(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xcd);
 	a16();
 }
@@ -637,14 +634,14 @@ call(void)
 static void
 rnc(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xd0);
 }
 
 static void
 jnc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xd2);
 	a16();
 }
@@ -652,7 +649,7 @@ jnc(void)
 static void
 cnc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xd4);
 	a16();
 }
@@ -660,14 +657,14 @@ cnc(void)
 static void
 rc(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xd8);
 }
 
 static void
 jc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0xda);
 	a16();
 }
@@ -675,7 +672,7 @@ jc(void)
 static void
 cc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xdc);
 	a16();
 }
@@ -683,14 +680,14 @@ cc(void)
 static void
 rpo(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xe0);
 }
 
 static void
 jpo(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xe2);
 	a16();
 }
@@ -698,7 +695,7 @@ jpo(void)
 static void
 cpo(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xe4);
 	a16();
 }
@@ -706,14 +703,14 @@ cpo(void)
 static void
 rpe(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xe8);
 }
 
 static void
 jpe(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xea);
 	a16();
 }
@@ -721,7 +718,7 @@ jpe(void)
 static void
 cpe(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xec);
 	a16();
 }
@@ -729,14 +726,14 @@ cpe(void)
 static void
 rp(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xf0);
 }
 
 static void
 jp(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xf2);
 	a16();
 }
@@ -744,7 +741,7 @@ jp(void)
 static void
 cp(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xf4);
 	a16();
 }
@@ -752,14 +749,14 @@ cp(void)
 static void
 rm(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0xf8);
 }
 
 static void
 jm(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xfa);
 	a16();
 }
@@ -767,7 +764,7 @@ jm(void)
 static void
 cm(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0xfc);
 	a16();
 }
@@ -775,7 +772,7 @@ cm(void)
 static void
 rst(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	int offset = (int)strtol(arg1, (char **)NULL, 10);
 	if (offset >= 0 && offset <= 7) {
@@ -788,98 +785,98 @@ rst(void)
 static void
 rlc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x07);
 }
 
 static void
 rrc(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x0f);
 }
 
 static void
 ral(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x17);
 }
 
 static void
 rar(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x1f);
 }
 
 static void
 daa(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x27);
 }
 
 static void
 cma(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x2f);
 }
 
 static void
 stc(void)
 {
-	argcheck(!arg1 && !arg2);
+	assertarg(!arg1 && !arg2);
 	pass_act(1, 0x37);
 }
 
 static void
 cmc(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x3f);
 }
 
 static void
 inx(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x03 + reg_mod16());
 }
 
 static void
 dad(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x09 + reg_mod16());
 }
 
 static void
 dcx(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x0b + reg_mod16());
 }
 
 static void
 inr(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x04 + (reg_mod8(arg1) << 3));
 }
 
 static void
 dcr(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(1, 0x05 + (reg_mod8(arg1) << 3));
 }
 
 static void
 stax(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	switch (arg1[0]) {
 	case 'b':
@@ -896,7 +893,7 @@ stax(void)
 static void
 ldax(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	switch (arg1[0]) {
 	case 'b':
@@ -913,7 +910,7 @@ ldax(void)
 static void
 shld(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0x22);
 	a16();
 }
@@ -921,7 +918,7 @@ shld(void)
 static void
 lhld(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0x2a);
 	a16();
 }
@@ -929,7 +926,7 @@ lhld(void)
 static void
 sta(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0x32);
 	a16();
 }
@@ -937,7 +934,7 @@ sta(void)
 static void
 lda(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 	pass_act(3, 0x3a);
 	a16();
 }
@@ -945,7 +942,7 @@ lda(void)
 static void
 mvi(void)
 {
-	argcheck(arg1 && arg2);
+	assertarg(arg1 && arg2);
 	pass_act(2, 0x06 + (reg_mod8(arg1) << 3));
 	imm(IMM8);
 }
@@ -953,7 +950,7 @@ mvi(void)
 static void
 lxi(void)
 {
-	argcheck(arg1 && arg2);
+	assertarg(arg1 && arg2);
 	pass_act(3, 0x01 + reg_mod16());
 	imm(IMM16);
 }
@@ -961,25 +958,25 @@ lxi(void)
 static void
 name(void)
 {
-	argcheck(!label && arg1 && !arg2);
+	assertarg(!label && arg1 && !arg2);
 }
 
 static void
 title(void)
 {
-	argcheck(!label && arg1 && !arg2);
+	assertarg(!label && arg1 && !arg2);
 }
 
 static void
 end(void)
 {
-	argcheck(!label && !arg1 && !arg2);
+	assertarg(!label && !arg1 && !arg2);
 }
 
 static void
 org(void)
 {
-	argcheck(!label && arg1 && !arg2);
+	assertarg(!label && arg1 && !arg2);
 
 	if (isdigit(arg1[0])) {
 		if (pass == 1) {
@@ -1016,7 +1013,7 @@ equ(void)
 static void
 dw(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	if (pass == 1) {
 		if (label) {
@@ -1031,7 +1028,7 @@ dw(void)
 static void
 ds(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	if (pass == 1) {
 		if (label) {
@@ -1050,7 +1047,7 @@ ds(void)
 static void
 db(void)
 {
-	argcheck(arg1 && !arg2);
+	assertarg(arg1 && !arg2);
 
 	if (isdigit(arg1[0])) {
 		pass_act(1, numcheck(arg1));
