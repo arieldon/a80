@@ -1251,7 +1251,7 @@ process(void)
 }
 
 static void
-assemble(struct list *lines, FILE *outfile)
+assemble(struct list *lines)
 {
 	struct node *line;
 
@@ -1280,7 +1280,6 @@ assemble(struct list *lines, FILE *outfile)
 		process();
 	}
 
-	fwrite(output, sizeof(unsigned char), sizeof(output), outfile);
 	freelist(linesdup);
 }
 
@@ -1309,6 +1308,9 @@ main(int argc, char *argv[])
 	}
 	free(line);
 
+	symtabs = initlist();
+	assemble(lines);
+
 	char outname[BUFSIZ] = { 0 };
 	char *stem = strtok(argv[1], ".");
 	snprintf(outname, BUFSIZ, "%s.com", stem);
@@ -1318,9 +1320,7 @@ main(int argc, char *argv[])
 		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
-
-	symtabs = initlist();
-	assemble(lines, ostream);
+	fwrite(output, sizeof(unsigned char), sizeof(output), ostream);
 
 	freelist(lines);
 	freelist(symtabs);
