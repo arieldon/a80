@@ -1,5 +1,6 @@
 #include <ctype.h>
-#include <stdint.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -186,12 +187,18 @@ numcheck(char *input)
 	unsigned short num;
 	char *end = input + strlen(input) - 1;
 
-	/* TODO Test for overflow? */
-	if (*end == 'h') {
-		*end = '\0';
-		num = (unsigned short)strtol(input, &end, 16);
-	} else {
-		num = (unsigned short)strtol(input, &end, 10);
+	num = *end == 'h'
+		? (unsigned short)strtol(input, &end, 16)
+		: (unsigned short)strtol(input, &end, 10);
+
+	errno = 0;
+	if ((errno == ERANGE && (num == SHRT_MAX || num == 0))
+			|| (errno != 0 && num == 0)) {
+		errmsg("%s", "unable to convert input into a number");
+	}
+
+	if (end == input) {
+		errmsg("%s", "no digits present");
 	}
 
 	return num;
