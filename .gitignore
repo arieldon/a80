@@ -1,0 +1,9 @@
+*.[Ss]
+*.asm
+*.com
+
+readme
+a80
+
+asm/
+build/
