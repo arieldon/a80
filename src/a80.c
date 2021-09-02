@@ -35,11 +35,11 @@ static size_t noutput;
 static size_t lineno;
 static int pass;
 
-/* FORMAT [label:] [op [arg1[, arg2]]] [; comment] */
+/* FORMAT [label:] [mnemonic [operand1[, operand2]]] [; comment] */
 static char *label;
-static char *op;
-static char *arg1;
-static char *arg2;
+static char *mnemonic;
+static char *operand1;
+static char *operand2;
 static char *comment;
 
 static char *
@@ -59,9 +59,9 @@ static void
 parse(char *line)
 {
 	label = NULL;
-	op = NULL;
-	arg1 = NULL;
-	arg2 = NULL;
+	mnemonic = NULL;
+	operand1 = NULL;
+	operand2 = NULL;
 	comment = NULL;
 
 	line = strip(line);
@@ -82,58 +82,58 @@ parse(char *line)
 
 	/*
 	 * If there exists a single quote or tick in the line after the comment
-	 * has been tokenized and separated, then `arg1` consists of a string
-	 * and `arg2` is empty.
+	 * has been tokenized and separated, then `operand1` consists of a
+	 * string and `operand2` is empty.
 	 *
 	 * First find the opening single quote, then the closing single quote.
 	 *
-	 * This condition exists for instruction `db`.
+	 * This condition exists for mnemonicuction `db`.
 	 */
-	if ((arg1 = strchr(line, '\'')) != NULL) {
-		end = arg1;
+	if ((operand1 = strchr(line, '\'')) != NULL) {
+		end = operand1;
 		*end = '\0';
-		arg1 = strip(arg1 + 1);
+		operand1 = strip(operand1 + 1);
 
 		/* Find closing single quote. */
-		end = strchr(arg1, '\'');
+		end = strchr(operand1, '\'');
 		*end = '\0';
 
-		goto setop;
+		goto setmnem;
 	}
 
-	arg2 = memchr(line, ',', end - line);
-	if (arg2) {
-		end = arg2;
+	operand2 = memchr(line, ',', end - line);
+	if (operand2) {
+		end = operand2;
 		*end = '\0';
-		arg2 = strip(arg2 + 1);
+		operand2 = strip(operand2 + 1);
 	}
 
-	arg1 = strrchr(strip(line), ' ');
-	if (arg1) {
-		end = arg1;
+	operand1 = strrchr(strip(line), ' ');
+	if (operand1) {
+		end = operand1;
 		*end = '\0';
-		arg1 = strip(arg1 + 1);
+		operand1 = strip(operand1 + 1);
 	} else {
-		if ((arg1 = strrchr(strip(line), '\t')) != NULL) {
-			end = arg1;
+		if ((operand1 = strrchr(strip(line), '\t')) != NULL) {
+			end = operand1;
 			*end = '\0';
-			arg1 = strip(arg1 + 1);
+			operand1 = strip(operand1 + 1);
 		}
 	}
-setop:
-	op = memchr(line, ':', end - line);
-	if (op) {
-		end = op;
+setmnem:
+	mnemonic = memchr(line, ':', end - line);
+	if (mnemonic) {
+		end = mnemonic;
 		*end = '\0';
-		op = strip(op + 1);
+		mnemonic = strip(mnemonic + 1);
 
-		if (op[0] == '\0') {
-			op = NULL;
+		if (mnemonic[0] == '\0') {
+			mnemonic = NULL;
 		}
 
 		label = line;
 	} else {
-		op = strip(line);
+		mnemonic = strip(line);
 	}
 }
 
@@ -211,10 +211,10 @@ imm(enum immtype type)
 	unsigned short num;
 	int found = 0;
 
-	if (strcmp(op, "lxi") == 0 || strcmp(op, "mvi") == 0) {
-		arg = arg2;
+	if (strcmp(mnemonic, "lxi") == 0 || strcmp(mnemonic, "mvi") == 0) {
+		arg = operand2;
 	} else {
-		arg = arg1;
+		arg = operand1;
 	}
 
 	if (isdigit(arg[0])) {
@@ -254,25 +254,25 @@ a16(void)
 	unsigned short num;
 	int found = 0;
 
-	if (isdigit(arg1[0])) {
-		num = numcheck(arg1);
+	if (isdigit(operand1[0])) {
+		num = numcheck(operand1);
 	} else {
-			struct symtab *sym;
-			struct node *node = symtabs->head;
+		struct symtab *sym;
+		struct node *node = symtabs->head;
 
-			while (node != NULL) {
-				sym = (struct symtab *)(node->value);
-				if (sym && (strcmp(arg1, sym->label) == 0)) {
-					num = sym->value;
-					found = 1;
-					break;
-				}
-				node = node->next;
+		while (node != NULL) {
+			sym = (struct symtab *)(node->value);
+			if (sym && (strcmp(operand1, sym->label) == 0)) {
+				num = sym->value;
+				found = 1;
+				break;
 			}
+			node = node->next;
+		}
 
-			if (!found) {
-				errmsg("label %s undefined", arg1);
-			}
+		if (!found) {
+			errmsg("label %s undefined", operand1);
+		}
 	}
 
 	if (pass == 2) {
@@ -309,26 +309,28 @@ reg_mod8(char *reg)
 static int
 reg_mod16(void)
 {
-	if (strcmp(arg1, "b") == 0) {
+	if (strcmp(operand1, "b") == 0) {
 		return 0x00;
-	} else if (strcmp(arg1, "d") == 0) {
+	} else if (strcmp(operand1, "d") == 0) {
 		return 0x10;
-	} else if (strcmp(arg1, "h") == 0) {
+	} else if (strcmp(operand1, "h") == 0) {
 		return 0x20;
-	} else if (strcmp(arg1, "psw") == 0) {
-		if (strcmp(op, "pop") == 0 || strcmp(op, "push") == 0) {
+	} else if (strcmp(operand1, "psw") == 0) {
+		if (strcmp(mnemonic, "pop") == 0
+				|| strcmp(mnemonic, "push") == 0) {
 			return 0x30;
 		} else {
-			errmsg("psw may not be used with %s", op);
+			errmsg("psw may not be used with %s", mnemonic);
 		}
-	} else if (strcmp(arg1, "sp") == 0) {
-		if (strcmp(op, "pop") != 0 || strcmp(op, "push") != 0) {
+	} else if (strcmp(operand1, "sp") == 0) {
+		if (strcmp(mnemonic, "pop") != 0
+				|| strcmp(mnemonic, "push") != 0) {
 			return 0x30;
 		} else {
-			errmsg("sp may not be used with %s", op);
+			errmsg("sp may not be used with %s", mnemonic);
 		}
 	} else {
-		errmsg("invalid register for opcode %s", op);
+		errmsg("invalid register for mnemonicuction %s", mnemonic);
 	}
 }
 
@@ -337,17 +339,17 @@ dollar(void)
 {
 	unsigned short num = addr;
 
-	if (strlen(arg1) > 1) {
-		if (arg1[1] == '+') {
-			num += numcheck(arg1 + 2);
-		} else if (arg1[1] == '-') {
-			num -= numcheck(arg1 + 2);
-		} else if (arg1[1] == '*') {
-			num *= numcheck(arg1 + 2);
-		} else if (arg1[1] == '/') {
-			num /= numcheck(arg1 + 2);
-		} else if (arg1[1] == '%') {
-			num %= numcheck(arg1 + 2);
+	if (strlen(operand1) > 1) {
+		if (operand1[1] == '+') {
+			num += numcheck(operand1 + 2);
+		} else if (operand1[1] == '-') {
+			num -= numcheck(operand1 + 2);
+		} else if (operand1[1] == '*') {
+			num *= numcheck(operand1 + 2);
+		} else if (operand1[1] == '/') {
+			num /= numcheck(operand1 + 2);
+		} else if (operand1[1] == '%') {
+			num %= numcheck(operand1 + 2);
 		} else {
 			errmsg("%s", "invalid operator in equ");
 		}
@@ -359,84 +361,84 @@ dollar(void)
 static void
 nop(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x00);
 }
 
 static void
 mov(void)
 {
-	assertarg(arg1 && arg2);
-	pass_act(1, 0x40 + (reg_mod8(arg1) << 3) + reg_mod8(arg2));
+	assertarg(operand1 && operand2);
+	pass_act(1, 0x40 + (reg_mod8(operand1) << 3) + reg_mod8(operand2));
 }
 
 static void
 hlt(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x76);
 }
 
 static void
 add(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x80 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x80 + reg_mod8(operand1));
 }
 
 static void
 adc(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x88 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x88 + reg_mod8(operand1));
 }
 
 static void
 sub(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x90 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x90 + reg_mod8(operand1));
 }
 
 static void
 sbb(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x98 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x98 + reg_mod8(operand1));
 }
 
 static void
 ana(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0xa0 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0xa0 + reg_mod8(operand1));
 }
 
 static void
 xra(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0xa8 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0xa8 + reg_mod8(operand1));
 }
 
 static void
 ora(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0xb0 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0xb0 + reg_mod8(operand1));
 }
 
 static void
 cmp(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0xb8 + reg_mod8(arg1));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0xb8 + reg_mod8(operand1));
 }
 
 static void
 adi(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xc6);
 	imm(IMM8);
 }
@@ -444,7 +446,7 @@ adi(void)
 static void
 aci(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xce);
 	imm(IMM8);
 }
@@ -452,7 +454,7 @@ aci(void)
 static void
 sui(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xd6);
 	imm(IMM8);
 }
@@ -460,7 +462,7 @@ sui(void)
 static void
 sbi(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xde);
 	imm(IMM8);
 }
@@ -468,7 +470,7 @@ sbi(void)
 static void
 ani(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xe6);
 	imm(IMM8);
 }
@@ -476,7 +478,7 @@ ani(void)
 static void
 xri(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xee);
 	imm(IMM8);
 }
@@ -484,7 +486,7 @@ xri(void)
 static void
 ori(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xf6);
 	imm(IMM8);
 }
@@ -492,7 +494,7 @@ ori(void)
 static void
 cpi(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xfe);
 	imm(IMM8);
 }
@@ -500,49 +502,49 @@ cpi(void)
 static void
 xthl(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xe3);
 }
 
 static void
 pchl(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xe9);
 }
 
 static void
 xchg(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xeb);
 }
 
 static void
 sphl(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xf9);
 }
 
 static void
 push(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0xc5 + reg_mod16());
 }
 
 static void
 pop(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0xc1 + reg_mod16());
 }
 
 static void
 out(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xd3);
 	imm(IMM8);
 }
@@ -550,7 +552,7 @@ out(void)
 static void
 in(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(2, 0xdb);
 	imm(IMM8);
 }
@@ -558,28 +560,28 @@ in(void)
 static void
 di(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xf3);
 }
 
 static void
 ei(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xfb);
 }
 
 static void
 rnz(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xc0);
 }
 
 static void
 jnz(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(3, 0xc2);
 	a16();
 }
@@ -587,7 +589,7 @@ jnz(void)
 static void
 jmp(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xc3);
 	a16();
 }
@@ -595,7 +597,7 @@ jmp(void)
 static void
 cnz(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xc4);
 	a16();
 }
@@ -603,21 +605,21 @@ cnz(void)
 static void
 rz(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xc8);
 }
 
 static void
 ret(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xc9);
 }
 
 static void
 jz(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xca);
 	a16();
 }
@@ -625,7 +627,7 @@ jz(void)
 static void
 cz(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xcc);
 	a16();
 }
@@ -633,7 +635,7 @@ cz(void)
 static void
 call(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xcd);
 	a16();
 }
@@ -641,14 +643,14 @@ call(void)
 static void
 rnc(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xd0);
 }
 
 static void
 jnc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xd2);
 	a16();
 }
@@ -656,7 +658,7 @@ jnc(void)
 static void
 cnc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xd4);
 	a16();
 }
@@ -664,14 +666,14 @@ cnc(void)
 static void
 rc(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xd8);
 }
 
 static void
 jc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0xda);
 	a16();
 }
@@ -679,7 +681,7 @@ jc(void)
 static void
 cc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xdc);
 	a16();
 }
@@ -687,14 +689,14 @@ cc(void)
 static void
 rpo(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xe0);
 }
 
 static void
 jpo(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xe2);
 	a16();
 }
@@ -702,7 +704,7 @@ jpo(void)
 static void
 cpo(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xe4);
 	a16();
 }
@@ -710,14 +712,14 @@ cpo(void)
 static void
 rpe(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xe8);
 }
 
 static void
 jpe(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xea);
 	a16();
 }
@@ -725,7 +727,7 @@ jpe(void)
 static void
 cpe(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xec);
 	a16();
 }
@@ -733,14 +735,14 @@ cpe(void)
 static void
 rp(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xf0);
 }
 
 static void
 jp(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xf2);
 	a16();
 }
@@ -748,7 +750,7 @@ jp(void)
 static void
 cp(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xf4);
 	a16();
 }
@@ -756,14 +758,14 @@ cp(void)
 static void
 rm(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0xf8);
 }
 
 static void
 jm(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xfa);
 	a16();
 }
@@ -771,7 +773,7 @@ jm(void)
 static void
 cm(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0xfc);
 	a16();
 }
@@ -779,113 +781,113 @@ cm(void)
 static void
 rst(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
-	int offset = (int)strtol(arg1, (char **)NULL, 10);
+	int offset = (int)strtol(operand1, (char **)NULL, 10);
 	if (offset >= 0 && offset <= 7) {
 		pass_act(1, 0xc7 + (offset << 3));
 	} else {
-		errmsg("invalid reset vector %s", arg1);
+		errmsg("invalid reset vector %s", operand1);
 	}
 }
 
 static void
 rlc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x07);
 }
 
 static void
 rrc(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x0f);
 }
 
 static void
 ral(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x17);
 }
 
 static void
 rar(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x1f);
 }
 
 static void
 daa(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x27);
 }
 
 static void
 cma(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x2f);
 }
 
 static void
 stc(void)
 {
-	assertarg(!arg1 && !arg2);
+	assertarg(!operand1 && !operand2);
 	pass_act(1, 0x37);
 }
 
 static void
 cmc(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x3f);
 }
 
 static void
 inx(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x03 + reg_mod16());
 }
 
 static void
 dad(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x09 + reg_mod16());
 }
 
 static void
 dcx(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(1, 0x0b + reg_mod16());
 }
 
 static void
 inr(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x04 + (reg_mod8(arg1) << 3));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x04 + (reg_mod8(operand1) << 3));
 }
 
 static void
 dcr(void)
 {
-	assertarg(arg1 && !arg2);
-	pass_act(1, 0x05 + (reg_mod8(arg1) << 3));
+	assertarg(operand1 && !operand2);
+	pass_act(1, 0x05 + (reg_mod8(operand1) << 3));
 }
 
 static void
 stax(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
-	switch (arg1[0]) {
+	switch (operand1[0]) {
 	case 'b':
 		pass_act(1, 0x02);
 		break;
@@ -900,9 +902,9 @@ stax(void)
 static void
 ldax(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
-	switch (arg1[0]) {
+	switch (operand1[0]) {
 	case 'b':
 		pass_act(1, 0x0a);
 		break;
@@ -917,7 +919,7 @@ ldax(void)
 static void
 shld(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0x22);
 	a16();
 }
@@ -925,7 +927,7 @@ shld(void)
 static void
 lhld(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0x2a);
 	a16();
 }
@@ -933,7 +935,7 @@ lhld(void)
 static void
 sta(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0x32);
 	a16();
 }
@@ -941,7 +943,7 @@ sta(void)
 static void
 lda(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 	pass_act(3, 0x3a);
 	a16();
 }
@@ -949,15 +951,15 @@ lda(void)
 static void
 mvi(void)
 {
-	assertarg(arg1 && arg2);
-	pass_act(2, 0x06 + (reg_mod8(arg1) << 3));
+	assertarg(operand1 && operand2);
+	pass_act(2, 0x06 + (reg_mod8(operand1) << 3));
 	imm(IMM8);
 }
 
 static void
 lxi(void)
 {
-	assertarg(arg1 && arg2);
+	assertarg(operand1 && operand2);
 	pass_act(3, 0x01 + reg_mod16());
 	imm(IMM16);
 }
@@ -965,29 +967,29 @@ lxi(void)
 static void
 name(void)
 {
-	assertarg(!label && arg1 && !arg2);
+	assertarg(!label && operand1 && !operand2);
 }
 
 static void
 title(void)
 {
-	assertarg(!label && arg1 && !arg2);
+	assertarg(!label && operand1 && !operand2);
 }
 
 static void
 end(void)
 {
-	assertarg(!label && !arg1 && !arg2);
+	assertarg(!label && !operand1 && !operand2);
 }
 
 static void
 org(void)
 {
-	assertarg(!label && arg1 && !arg2);
+	assertarg(!label && operand1 && !operand2);
 
-	if (isdigit(arg1[0])) {
+	if (isdigit(operand1[0])) {
 		if (pass == 1) {
-			addr = numcheck(arg1);
+			addr = numcheck(operand1);
 		}
 	} else {
 		errmsg("%s", "org requires a number");
@@ -1003,10 +1005,10 @@ equ(void)
 		errmsg("%s", "equ statement requires a label");
 	}
 
-	if (arg1[0] == '$') {
+	if (operand1[0] == '$') {
 		value = dollar();
 	} else {
-		value = numcheck(arg1);
+		value = numcheck(operand1);
 	}
 
 	if (pass == 1) {
@@ -1020,7 +1022,7 @@ equ(void)
 static void
 dw(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
 	if (pass == 1) {
 		if (label) {
@@ -1035,225 +1037,225 @@ dw(void)
 static void
 ds(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
 	if (pass == 1) {
 		if (label) {
 			addsym();
 		}
 	} else {
-		unsigned short num = numcheck(arg1);
+		unsigned short num = numcheck(operand1);
 		for (size_t i = 0; i < num; ++i) {
 			output[++noutput] = 0;
 		}
 	}
 
-	addr += numcheck(arg1);
+	addr += numcheck(operand1);
 }
 
 static void
 db(void)
 {
-	assertarg(arg1 && !arg2);
+	assertarg(operand1 && !operand2);
 
-	if (isdigit(arg1[0])) {
-		pass_act(1, numcheck(arg1));
+	if (isdigit(operand1[0])) {
+		pass_act(1, numcheck(operand1));
 	} else {
 		if (pass == 1) {
 			if (label) {
 				addsym();
 			}
 		} else {
-			for (char *c = arg1; *c != '\0'; ++c) {
+			for (char *c = operand1; *c != '\0'; ++c) {
 				output[noutput++] = (unsigned char)*c;
 			}
 		}
-		addr += strlen(arg1);
+		addr += strlen(operand1);
 	}
 }
 
 static void
 process(void)
 {
-	if (!op && !arg1 && !arg2) {
+	if (!mnemonic && !operand1 && !operand2) {
 		pass_act(0, -1);
 		return;
 	}
 
-	if (strcmp(op, "nop") == 0) {
+	if (strcmp(mnemonic, "nop") == 0) {
 		nop();
-	} else if (strcmp(op, "mov") == 0) {
+	} else if (strcmp(mnemonic, "mov") == 0) {
 		mov();
-	} else if (strcmp(op, "hlt") == 0) {
+	} else if (strcmp(mnemonic, "hlt") == 0) {
 		hlt();
-	} else if (strcmp(op, "add") == 0) {
+	} else if (strcmp(mnemonic, "add") == 0) {
 		add();
-	} else if (strcmp(op, "adc") == 0) {
+	} else if (strcmp(mnemonic, "adc") == 0) {
 		adc();
-	} else if (strcmp(op, "sub") == 0) {
+	} else if (strcmp(mnemonic, "sub") == 0) {
 		sub();
-	} else if (strcmp(op, "sbb") == 0) {
+	} else if (strcmp(mnemonic, "sbb") == 0) {
 		sbb();
-	} else if (strcmp(op, "ana") == 0) {
+	} else if (strcmp(mnemonic, "ana") == 0) {
 		ana();
-	} else if (strcmp(op, "xra") == 0) {
+	} else if (strcmp(mnemonic, "xra") == 0) {
 		xra();
-	} else if (strcmp(op, "ora") == 0) {
+	} else if (strcmp(mnemonic, "ora") == 0) {
 		ora();
-	} else if (strcmp(op, "cmp") == 0) {
+	} else if (strcmp(mnemonic, "cmp") == 0) {
 		cmp();
-	} else if (strcmp(op, "adi") == 0) {
+	} else if (strcmp(mnemonic, "adi") == 0) {
 		adi();
-	} else if (strcmp(op, "aci") == 0) {
+	} else if (strcmp(mnemonic, "aci") == 0) {
 		aci();
-	} else if (strcmp(op, "sui") == 0) {
+	} else if (strcmp(mnemonic, "sui") == 0) {
 		sui();
-	} else if (strcmp(op, "sbi") == 0) {
+	} else if (strcmp(mnemonic, "sbi") == 0) {
 		sbi();
-	} else if (strcmp(op, "ani") == 0) {
+	} else if (strcmp(mnemonic, "ani") == 0) {
 		ani();
-	} else if (strcmp(op, "xri") == 0) {
+	} else if (strcmp(mnemonic, "xri") == 0) {
 		xri();
-	} else if (strcmp(op, "ori") == 0) {
+	} else if (strcmp(mnemonic, "ori") == 0) {
 		ori();
-	} else if (strcmp(op, "cpi") == 0) {
+	} else if (strcmp(mnemonic, "cpi") == 0) {
 		cpi();
-	} else if (strcmp(op, "xthl") == 0) {
+	} else if (strcmp(mnemonic, "xthl") == 0) {
 		xthl();
-	} else if (strcmp(op, "pchl") == 0) {
+	} else if (strcmp(mnemonic, "pchl") == 0) {
 		pchl();
-	} else if (strcmp(op, "xchg") == 0) {
+	} else if (strcmp(mnemonic, "xchg") == 0) {
 		xchg();
-	} else if (strcmp(op, "sphl") == 0) {
+	} else if (strcmp(mnemonic, "sphl") == 0) {
 		sphl();
-	} else if (strcmp(op, "push") == 0) {
+	} else if (strcmp(mnemonic, "push") == 0) {
 		push();
-	} else if (strcmp(op, "pop") == 0) {
+	} else if (strcmp(mnemonic, "pop") == 0) {
 		pop();
-	} else if (strcmp(op, "out") == 0) {
+	} else if (strcmp(mnemonic, "out") == 0) {
 		out();
-	} else if (strcmp(op, "in") == 0) {
+	} else if (strcmp(mnemonic, "in") == 0) {
 		in();
-	} else if (strcmp(op, "di") == 0) {
+	} else if (strcmp(mnemonic, "di") == 0) {
 		di();
-	} else if (strcmp(op, "ei") == 0) {
+	} else if (strcmp(mnemonic, "ei") == 0) {
 		ei();
-	} else if (strcmp(op, "rnz") == 0) {
+	} else if (strcmp(mnemonic, "rnz") == 0) {
 		rnz();
-	} else if (strcmp(op, "jnz") == 0) {
+	} else if (strcmp(mnemonic, "jnz") == 0) {
 		jnz();
-	} else if (strcmp(op, "jmp") == 0) {
+	} else if (strcmp(mnemonic, "jmp") == 0) {
 		jmp();
-	} else if (strcmp(op, "cnz") == 0) {
+	} else if (strcmp(mnemonic, "cnz") == 0) {
 		cnz();
-	} else if (strcmp(op, "rz") == 0) {
+	} else if (strcmp(mnemonic, "rz") == 0) {
 		rz();
-	} else if (strcmp(op, "ret") == 0) {
+	} else if (strcmp(mnemonic, "ret") == 0) {
 		ret();
-	} else if (strcmp(op, "jz") == 0) {
+	} else if (strcmp(mnemonic, "jz") == 0) {
 		jz();
-	} else if (strcmp(op, "cz") == 0) {
+	} else if (strcmp(mnemonic, "cz") == 0) {
 		cz();
-	} else if (strcmp(op, "call") == 0) {
+	} else if (strcmp(mnemonic, "call") == 0) {
 		call();
-	} else if (strcmp(op, "rnc") == 0) {
+	} else if (strcmp(mnemonic, "rnc") == 0) {
 		rnc();
-	} else if (strcmp(op, "jnc") == 0) {
+	} else if (strcmp(mnemonic, "jnc") == 0) {
 		jnc();
-	} else if (strcmp(op, "cnc") == 0) {
+	} else if (strcmp(mnemonic, "cnc") == 0) {
 		cnc();
-	} else if (strcmp(op, "rc") == 0) {
+	} else if (strcmp(mnemonic, "rc") == 0) {
 		rc();
-	} else if (strcmp(op, "jc") == 0) {
+	} else if (strcmp(mnemonic, "jc") == 0) {
 		jc();
-	} else if (strcmp(op, "cc") == 0) {
+	} else if (strcmp(mnemonic, "cc") == 0) {
 		cc();
-	} else if (strcmp(op, "rpo") == 0) {
+	} else if (strcmp(mnemonic, "rpo") == 0) {
 		rpo();
-	} else if (strcmp(op, "jpo") == 0) {
+	} else if (strcmp(mnemonic, "jpo") == 0) {
 		jpo();
-	} else if (strcmp(op, "cpo") == 0) {
+	} else if (strcmp(mnemonic, "cpo") == 0) {
 		cpo();
-	} else if (strcmp(op, "rpe") == 0) {
+	} else if (strcmp(mnemonic, "rpe") == 0) {
 		rpe();
-	} else if (strcmp(op, "jpe") == 0) {
+	} else if (strcmp(mnemonic, "jpe") == 0) {
 		jpe();
-	} else if (strcmp(op, "cpe") == 0) {
+	} else if (strcmp(mnemonic, "cpe") == 0) {
 		cpe();
-	} else if (strcmp(op, "rp") == 0) {
+	} else if (strcmp(mnemonic, "rp") == 0) {
 		rp();
-	} else if (strcmp(op, "jp") == 0) {
+	} else if (strcmp(mnemonic, "jp") == 0) {
 		jp();
-	} else if (strcmp(op, "cp") == 0) {
+	} else if (strcmp(mnemonic, "cp") == 0) {
 		cp();
-	} else if (strcmp(op, "rm") == 0) {
+	} else if (strcmp(mnemonic, "rm") == 0) {
 		rm();
-	} else if (strcmp(op, "jm") == 0) {
+	} else if (strcmp(mnemonic, "jm") == 0) {
 		jm();
-	} else if (strcmp(op, "cm") == 0) {
+	} else if (strcmp(mnemonic, "cm") == 0) {
 		cm();
-	} else if (strcmp(op, "rst") == 0) {
+	} else if (strcmp(mnemonic, "rst") == 0) {
 		rst();
-	} else if (strcmp(op, "rlc") == 0) {
+	} else if (strcmp(mnemonic, "rlc") == 0) {
 		rlc();
-	} else if (strcmp(op, "rrc") == 0) {
+	} else if (strcmp(mnemonic, "rrc") == 0) {
 		rrc();
-	} else if (strcmp(op, "ral") == 0) {
+	} else if (strcmp(mnemonic, "ral") == 0) {
 		ral();
-	} else if (strcmp(op, "rar") == 0) {
+	} else if (strcmp(mnemonic, "rar") == 0) {
 		rar();
-	} else if (strcmp(op, "daa") == 0) {
+	} else if (strcmp(mnemonic, "daa") == 0) {
 		daa();
-	} else if (strcmp(op, "cma") == 0) {
+	} else if (strcmp(mnemonic, "cma") == 0) {
 		cma();
-	} else if (strcmp(op, "stc") == 0) {
+	} else if (strcmp(mnemonic, "stc") == 0) {
 		stc();
-	} else if (strcmp(op, "cmc") == 0) {
+	} else if (strcmp(mnemonic, "cmc") == 0) {
 		cmc();
-	} else if (strcmp(op, "inx") == 0) {
+	} else if (strcmp(mnemonic, "inx") == 0) {
 		inx();
-	} else if (strcmp(op, "dad") == 0) {
+	} else if (strcmp(mnemonic, "dad") == 0) {
 		dad();
-	} else if (strcmp(op, "dcx") == 0) {
+	} else if (strcmp(mnemonic, "dcx") == 0) {
 		dcx();
-	} else if (strcmp(op, "inr") == 0) {
+	} else if (strcmp(mnemonic, "inr") == 0) {
 		inr();
-	} else if (strcmp(op, "dcr") == 0) {
+	} else if (strcmp(mnemonic, "dcr") == 0) {
 		dcr();
-	} else if (strcmp(op, "stax") == 0) {
+	} else if (strcmp(mnemonic, "stax") == 0) {
 		stax();
-	} else if (strcmp(op, "ldax") == 0) {
+	} else if (strcmp(mnemonic, "ldax") == 0) {
 		ldax();
-	} else if (strcmp(op, "shld") == 0) {
+	} else if (strcmp(mnemonic, "shld") == 0) {
 		shld();
-	} else if (strcmp(op, "lhld") == 0) {
+	} else if (strcmp(mnemonic, "lhld") == 0) {
 		lhld();
-	} else if (strcmp(op, "sta") == 0) {
+	} else if (strcmp(mnemonic, "sta") == 0) {
 		sta();
-	} else if (strcmp(op, "lda") == 0) {
+	} else if (strcmp(mnemonic, "lda") == 0) {
 		lda();
-	} else if (strcmp(op, "mvi") == 0) {
+	} else if (strcmp(mnemonic, "mvi") == 0) {
 		mvi();
-	} else if (strcmp(op, "lxi") == 0) {
+	} else if (strcmp(mnemonic, "lxi") == 0) {
 		lxi();
-	} else if (strcmp(op, "name") == 0) {
+	} else if (strcmp(mnemonic, "name") == 0) {
 		name();
-	} else if (strcmp(op, "title") == 0) {
+	} else if (strcmp(mnemonic, "title") == 0) {
 		title();
-	} else if (strcmp(op, "end") == 0) {
+	} else if (strcmp(mnemonic, "end") == 0) {
 		end();
-	} else if (strcmp(op, "org") == 0) {
+	} else if (strcmp(mnemonic, "org") == 0) {
 		org();
-	} else if (strcmp(op, "equ") == 0) {
+	} else if (strcmp(mnemonic, "equ") == 0) {
 		equ();
-	} else if (strcmp(op, "dw") == 0) {
+	} else if (strcmp(mnemonic, "dw") == 0) {
 		dw();
-	} else if (strcmp(op, "ds") == 0) {
+	} else if (strcmp(mnemonic, "ds") == 0) {
 		ds();
-	} else if (strcmp(op, "db") == 0) {
+	} else if (strcmp(mnemonic, "db") == 0) {
 		db();
 	} else {
-		errmsg("unknown mnemonic: %s", op);
+		errmsg("unknown mnemonic: %s", mnemonic);
 	}
 }
 
