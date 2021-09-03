@@ -1320,11 +1320,10 @@ main(int argc, char *argv[])
 	symtabs = initlist();
 	assemble(lines);
 
-	char outname[BUFSIZ] = { 0 };
-	char *stem = strtok(argv[1], ".");
-	snprintf(outname, BUFSIZ, "%s.com", stem);
+	char *ext = strchr(argv[1], '.');
+	*ext = '\0';
 
-	ostream = fopen(outname, "w+");
+	ostream = fopen(argv[1], "w+");
 	if (ostream == NULL) {
 		perror("fopen");
 		exit(EXIT_FAILURE);
